@@ -218,7 +218,7 @@ abstract class BaseParser
             $this->lastAnnotationDelimitedAt = $delimiterPosition;
 
             // Skip after the delimiter and proceed
-            $pointer = $delimiterPosition + 1;
+            $pointer = $delimiterPosition + strlen($this->annotationDelimiter);
         }
         
         // Check if there's a delimiter that has not ended yet
