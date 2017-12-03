@@ -3,6 +3,7 @@
 namespace CommentToCode\Parsers;
 
 use CommentToCode\Parsers\Commands\ParserCommand;
+use CommentToCode\Parsers\Commands\ParserCommandCallInfo;
 use CommentToCode\Parsers\Exceptions\ParserCommandException;
 use CommentToCode\Parsers\Exceptions\ParserException;
 use CommentToCode\Common\Exceptions\NotImplementedException;
@@ -122,10 +123,10 @@ abstract class BaseParser
     {
         // Default values:
         $this->allowNativeCode = false;
-        $this->template = NULL;
+        $this->template = null;
         $this->variables = [];
         $this->commands = [];
-        $this->defaultCommand = NULL;
+        $this->defaultCommand = null;
         $this->annotationStart = '/*c2c';
         $this->annotationDelimiter = ':';
         $this->annotationEnd = '*/';
@@ -163,7 +164,7 @@ abstract class BaseParser
         $this->generatedCode = '';
 
         for($pointer = 0; $pointer < $codeLength; $pointer++) {
-            $generatedPart = $this->step($templateCode, $pointer, $codeLength);
+            $generatedPart = $this->step($templateCode, $pointer, $codeLength - 1);
             
             $this->appendGeneratedCode($generatedPart);
         }
@@ -189,6 +190,14 @@ abstract class BaseParser
     {
         $startAnnotationLength = strlen($this->annotationStart);
 
+        // Check if we've reached the end of the file
+        if($pointer >= $pointerMax){
+            // Check if we have any unfinished annotations
+            if($this->lastAnnotationEndedAt < $this->lastAnnotationStartedAt){
+                throw new ParserException("No end annotation found for start @ character #{$this->lastAnnotationStartedAt}");
+            }
+        }
+        
         // Check if we found the start of an annotation
         if(substr($code, $pointer, $startAnnotationLength) === $this->annotationStart){
 
@@ -208,7 +217,7 @@ abstract class BaseParser
             $this->lastAnnotationCommand = substr($code, $pointer, $delimiterPosition - $pointer);
             $this->lastAnnotationDelimitedAt = $delimiterPosition;
 
-            // Skip after the delmiter and proceed
+            // Skip after the delimiter and proceed
             $pointer = $delimiterPosition + 1;
         }
         
@@ -227,7 +236,13 @@ abstract class BaseParser
                 $pointer += $annotationEndLength - 1;
                 
                 // Run the command with the arguments and return the output to be put in the generated code
-                $output = $this->runCommand($command, $arguments);
+                $callInfo = new ParserCommandCallInfo(
+                    $command, 
+                    $arguments, 
+                    $this->template, 
+                    $this->lastAnnotationStartedAt);
+                
+                $output = $this->runCommand($callInfo);
                 
                 // Reset some data
                 $this->lastAnnotationCommand = '';
@@ -253,28 +268,47 @@ abstract class BaseParser
     /**
      * Step through the code
      *
-     * @param string $command
-     * @param string $arguments
+     * @param ParserCommandCallInfo $commandInfo Information about what and how the annotation called the command and from what file.
      *
      * @return string
      *
      * @throws ParserCommandException
      */
-    public function runCommand($command, $arguments)
+    public function runCommand(ParserCommandCallInfo $commandInfo)
     {
+        $command = $commandInfo->getName();
         $className = get_class($this);
-        
+
         if(empty($command)){
             if(empty($this->defaultCommand))
-                throw new ParserCommandException("No command given and no default command set in parser '{$className}'");
-            
+                throw new ParserCommandException($commandInfo, "no command given and no default command set in parser '{$className}'");
+
             $command = $this->defaultCommand;
         }
-    
+
         if(!isset($this->commands[$command]))
-            throw new ParserCommandException("$command command does not exist in parser '{$className}'");
+            throw new ParserCommandException($commandInfo, "$command command does not exist in parser '{$className}'");
+
+        return $this->commands[$command]->call($commandInfo, $this->variables);
+    }
+
+    /**
+     * Creates a sub parser for use by sub-templates
+     *
+     * @return BaseParser
+     */
+    public function createSubParser()
+    {
+        $parserClass = get_class($this);
         
-        return $this->commands[$command]->call($arguments, $this->variables);
+        $subTemplateParser = new $parserClass();
+        $subTemplateParser->setVariables($this->getVariables());
+
+        // Copy the commands and set the new parser as the commands' parser.
+        // (This way commands can play with their parsers without unintended effects on parsers high in the stack.)
+        $subTemplateParser->setCommands($this->getCommands(), $subTemplateParser);
+        
+        return $subTemplateParser;
     }
 
     /**
@@ -376,6 +410,8 @@ abstract class BaseParser
     /**
      * Get the parsed code
      * 
+     * @param bool $fromCache (optional) Whether the code should be loaded from memory if it's in there.
+     * 
      * @return string
      * 
      * @throws ParserException
@@ -393,19 +429,33 @@ abstract class BaseParser
     }
 
     /**
+     * @internal 
+     * 
      * @param array $commands
+     * @param BaseParser $newParser
+     * 
+     * @return void
      */
-    public function setCommands($commands)
+    public function setCommands($commands, BaseParser $newParser = null)
     {
+        if(!empty($newParser)){
+            foreach ($commands as $name => $command){
+                $command->setParser($newParser);
+            }
+        }
+        
         $this->commands = $commands;
     }
 
     /**
      * @param ParserCommand $command
+     *
+     * @return void
      */
     public function addCommands(ParserCommand $command)
     {
         $this->commands[$command->getName()] = $command;
+        $command->setParser($this);
     }
 
     /**
@@ -483,13 +533,11 @@ abstract class BaseParser
     }
 
     /**
-     * Called everytime a part of code is generated.
+     * Called every time a part of code is generated.
      * 
      * @note May be an empty string when the parser is just collecting information and not outputting anything
      *
      * @param string $part The part of code that was generated
-     * 
-     * @return array
      */
     public function appendGeneratedCode($part)
     {
@@ -498,6 +546,24 @@ abstract class BaseParser
         if(isset($this->appendGeneratedCodeCallback)){
             ($this->appendGeneratedCodeCallback)($part);
         }
+    }
+
+    /**
+     * @return string
+     */
+    public function getDefaultCommand()
+    {
+        return $this->defaultCommand;
+    }
+
+    /**
+     * @param string $defaultCommand
+     * 
+     * @return void
+     */
+    public function setDefaultCommand($defaultCommand)
+    {
+        $this->defaultCommand = $defaultCommand;
     }
 
 }

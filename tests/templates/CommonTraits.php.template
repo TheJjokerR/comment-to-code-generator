@@ -1,1 +1,3 @@
-use SomeTrait, OtherTrait/*c2c-csv-append: $traits */;
+    use /*/>csv-prepend: $traits2/*/SomeTrait, OtherTrait/*/>csv-append: $traits/*/;
+        
+/*/>include: AnotherTemplate.php.template /*/

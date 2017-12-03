@@ -3,7 +3,6 @@
 namespace CommentToCode\Generators;
 
 use CommentToCode\Parsers\BaseParser;
-use Illuminate\Filesystem\Filesystem;
 
 /**
  * This is the base generator class.

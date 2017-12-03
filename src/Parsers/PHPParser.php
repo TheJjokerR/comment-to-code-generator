@@ -2,8 +2,12 @@
 
 namespace CommentToCode\Parsers;
 use CommentToCode\Parsers\Commands\ParserCommand;
+use CommentToCode\Parsers\Commands\ParserCommandCallInfo;
 use CommentToCode\Parsers\Commands\PHPExecCommand;
 use CommentToCode\Parsers\Commands\PHPIncludeCommand;
+use CommentToCode\Parsers\Commands\PHPCSVCommand;
+use CommentToCode\Parsers\Commands\PHPCSVPrependCommand;
+use CommentToCode\Parsers\Commands\PHPCSVAppendCommand;
 
 /**
  * This is the PHP parser class.
@@ -22,18 +26,23 @@ class PHPParser extends BaseParser
     {
         parent::__construct();
         
-        $this->annotationStart = '/*c2c';
+        $this->annotationStart = '/*/>';
         $this->annotationDelimiter = ':';
-        $this->annotationEnd = '*/';
+        $this->annotationEnd = '/*/';
 
-        $this->addCommands(new PHPExecCommand('-exec'));
-        $this->addCommands(new PHPIncludeCommand('-include'));
-        $this->addCommands(new ParserCommand('-string', function($command, $arguments, $includedVariables = []){
+        $this->addCommands(new PHPExecCommand('exec'));
+        $this->addCommands(new PHPIncludeCommand('include'));
+        $this->addCommands(new PHPCSVCommand('csv'));
+        $this->addCommands(new PHPCSVPrependCommand('csv-prepend'));
+        $this->addCommands(new PHPCSVAppendCommand('csv-append'));
+        
+        // An example of how to create a command without having to make a class.
+        $this->addCommands(new ParserCommand('string', function(ParserCommandCallInfo $commandCallInfo, $includedVariables = []){
             extract($includedVariables);
-            return "'" . eval("return addcslashes(\"$arguments\", '\'\\\\');") . "'";
+            return "'" . eval("return addcslashes(\"{$commandCallInfo->getArguments()}\", '\'\\\\');") . "'";
         }));
         
-        $this->defaultCommand = '-string';
+        $this->defaultCommand = 'string';
     }
 
 }

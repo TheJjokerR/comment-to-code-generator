@@ -1,5 +1,5 @@
 <?php
 
-namespace CommentToCode\Exceptions;
+namespace CommentToCode\Generators\Exceptions;
 
 class FileGeneratorException extends \Exception {}

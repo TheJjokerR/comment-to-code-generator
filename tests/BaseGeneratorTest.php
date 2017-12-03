@@ -16,6 +16,7 @@ class BaseGeneratorTest extends PHPUnit_Framework_TestCase
             'lower_class_name' => 'car information',
             'invalid_class_name' => '1InvalidClassName',
             'traits' => ['ExtraTrait', 'AnotherExtraTrait'],
+            'traits2' => ['PrependedExtraTrait', 'AnotherPrependedExtraTrait'],
             'php_code_which_should_be_escaped' => '<?php echo "Finally found my mistake\'s,sorry for getting so mad neighbours."',
             'runtime_trait' => 'RuntimeAddedTrait.php.template'
         ];

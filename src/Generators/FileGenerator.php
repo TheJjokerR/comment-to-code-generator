@@ -2,9 +2,6 @@
 
 namespace CommentToCode\Generators;
 
-use CommentToCode\Parsers\BaseParser;
-use Illuminate\Filesystem\Filesystem;
-
 /**
  * This is the base generator class.
  *
@@ -19,7 +16,9 @@ class FileGenerator extends BaseGenerator
      * @param string $filePath
      * @param bool $force
      *
-     * @return void
+     * @return string The code that was written to the file
+     * 
+     * @throws Exceptions\FileGeneratorException
      */
     public function generateToFile($filePath, $force = false)
     {
@@ -45,6 +44,8 @@ class FileGenerator extends BaseGenerator
         
         $code = $this->generate();
         fclose($fileHandle);
+        
+        return $code;
     }
     
 }
