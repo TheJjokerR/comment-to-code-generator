@@ -1,0 +1,14 @@
+<?php
+
+
+class /*c2c-exec: str_replace(' ', '', ucwords($lower_class_name)); */
+{
+
+    /*c2c-include: CommonTraits.php.template */
+    
+    /*c2c-include: $runtime_trait */
+    
+    const SPECIAL_CONSTANT = /*c2c-string: $php_code_which_should_be_escaped $normal_text */;
+    
+    /*c2c: $php_code_which_should_be_escaped */ // But wont if setAllowNativeCode is set to true
+}
