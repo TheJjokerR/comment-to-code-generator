@@ -498,6 +498,8 @@ abstract class BaseParser
      * @return void
      */
     public function setTemplate($templateFile){
+        if(!file_exists($templateFile)) throw new ParserException("File does not exist: $templateFile");
+        
         $this->template = $templateFile;
     }
 
