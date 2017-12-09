@@ -168,6 +168,11 @@ abstract class BaseParser
             
             $this->appendGeneratedCode($generatedPart);
         }
+        
+        // Reset the parser pointers
+        $this->lastAnnotationStartedAt = 0;
+        $this->lastAnnotationEndedAt = 0;
+        $this->lastAnnotationDelimitedAt = 0;
 
         return $this->generatedCode;
     }
