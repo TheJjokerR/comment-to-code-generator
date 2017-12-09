@@ -1,11 +1,11 @@
 {
-    "name": "thejjokerr/comment-to-code-generator",
+    "name": "timothywalter/comment-to-code-generator",
     "description": "Provides a code generator based on templates",
     "keywords": ["code", "generator", "php", "template"],
     "license" : "MIT",
     "authors" : [
         {
-            "name": "Timothy Lutt",
+            "name": "Timothy Walter Lutt",
             "email": "lutt.tim@gmail.com"
         }
     ],
